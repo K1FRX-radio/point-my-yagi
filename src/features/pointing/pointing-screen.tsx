@@ -1,15 +1,28 @@
+import * as Haptics from "expo-haptics";
+import { useKeepAwake } from "expo-keep-awake";
 import { useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
-import { greatCircleDistanceMeters, initialBearingDeg } from "@/domain";
+import {
+    greatCircleDistanceMeters,
+    initialBearingDeg,
+    signedRotation,
+    turnInstruction,
+} from "@/domain";
 import { useForegroundLocation } from "@/features/location/use-foreground-location";
+import { PointerArrow } from "@/features/pointing/pointer-arrow";
+import { useHeading } from "@/features/pointing/use-heading";
+import { useTheme } from "@/hooks/use-theme";
 
 const METERS_PER_MILE = 1609.344;
+const ALIGN_TOLERANCE_DEG = 5;
+const ALIGNED_COLOR = "#12A150";
+const CAUTION_COLOR = "#C7791B";
 
 function single(value: string | string[] | undefined): string {
   return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
@@ -29,18 +42,26 @@ function formatDistance(meters: number): string {
   return `${km.toFixed(1)} km / ${miles.toFixed(1)} mi`;
 }
 
-function accuracyLabel(meters: number | null): { text: string; caution: boolean } {
+function gpsAccuracyLabel(meters: number | null): { text: string; caution: boolean } {
   if (meters == null) {
     return { text: "GPS accuracy unknown", caution: true };
   }
-  const rounded = Math.round(meters);
-  return { text: `GPS accuracy \u00B1${rounded} m`, caution: meters > 50 };
+  return { text: `GPS accuracy \u00B1${Math.round(meters)} m`, caution: meters > 50 };
+}
+
+function headingAccuracyLabel(accuracy: number): { text: string; poor: boolean } {
+  const levels = ["none", "low", "medium", "high"];
+  const level = levels[accuracy] ?? "unknown";
+  return { text: `Compass accuracy: ${level}`, poor: accuracy <= 1 };
 }
 
 export function PointingScreen() {
   const theme = useTheme();
+  useKeepAwake();
+
   const params = useLocalSearchParams<Record<string, string | string[]>>();
   const { state, refresh } = useForegroundLocation();
+  const heading = useHeading();
 
   const target = {
     latitude: Number(single(params.latitude)),
@@ -49,6 +70,27 @@ export function PointingScreen() {
     sourceLabel: single(params.sourceLabel) || "Manual",
     locationWarning: single(params.locationWarning),
   };
+
+  const from =
+    state.status === "ready" ? { latitude: state.latitude, longitude: state.longitude } : null;
+  const bearing = from
+    ? initialBearingDeg(from, { latitude: target.latitude, longitude: target.longitude })
+    : null;
+
+  const trueHeadingDeg = heading.status === "active" ? heading.reading.trueDeg : null;
+  const turn =
+    bearing != null && trueHeadingDeg != null
+      ? turnInstruction(trueHeadingDeg, bearing, ALIGN_TOLERANCE_DEG)
+      : null;
+  const aligned = turn?.aligned ?? false;
+
+  const wasAligned = useRef(false);
+  useEffect(() => {
+    if (aligned && !wasAligned.current) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    wasAligned.current = aligned;
+  }, [aligned]);
 
   if (state.status === "loading") {
     return (
@@ -85,55 +127,123 @@ export function PointingScreen() {
     );
   }
 
-  const from = { latitude: state.latitude, longitude: state.longitude };
-  const to = { latitude: target.latitude, longitude: target.longitude };
-  const bearing = initialBearingDeg(from, to);
-  const distanceMeters = greatCircleDistanceMeters(from, to);
-  const accuracy = accuracyLabel(state.accuracyMeters);
+  const distanceMeters = greatCircleDistanceMeters(
+    { latitude: state.latitude, longitude: state.longitude },
+    { latitude: target.latitude, longitude: target.longitude },
+  );
+  const gpsAccuracy = gpsAccuracyLabel(state.accuracyMeters);
+  const bearingText = bearing != null ? formatBearing(bearing) : "—";
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.readySafeArea}>
-        <View style={styles.headerBlock}>
-          <ThemedText type="subtitle">{target.name}</ThemedText>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            Source: {target.sourceLabel}
-          </ThemedText>
-        </View>
-
-        <View style={styles.bearingBlock}>
-          <ThemedText style={styles.bearingValue}>{formatBearing(bearing)}</ThemedText>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            TRUE BEARING
-          </ThemedText>
-        </View>
-
-        <View style={styles.distanceBlock}>
-          <ThemedText style={styles.distanceValue}>{formatDistance(distanceMeters)}</ThemedText>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            DISTANCE
-          </ThemedText>
-        </View>
-
-        <View style={styles.footerBlock}>
-          <ThemedText
-            type="smallBold"
-            style={{ color: accuracy.caution ? "#C7791B" : theme.textSecondary }}
-          >
-            {accuracy.text}
-            {accuracy.caution ? " — hold still for a better fix" : ""}
-          </ThemedText>
-          {target.locationWarning ? (
-            <ThemedText type="small" themeColor="textSecondary">
-              {target.locationWarning}
+      <SafeAreaView style={styles.flex} edges={["bottom"]}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.headerBlock}>
+            <ThemedText type="subtitle">{target.name}</ThemedText>
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              Source: {target.sourceLabel}
             </ThemedText>
-          ) : null}
-          <ThemedText type="small" themeColor="textSecondary">
-            Live compass pointing comes next. This shows the true bearing only.
-          </ThemedText>
-        </View>
+          </View>
+
+          {turn ? (
+            <>
+              <PointerArrow
+                rotationDeg={turn.rotation}
+                northDeg={signedRotation(trueHeadingDeg ?? 0, 0)}
+                color={aligned ? ALIGNED_COLOR : theme.text}
+                trackColor={theme.backgroundSelected}
+              />
+              <ThemedText style={[styles.turnText, aligned && { color: ALIGNED_COLOR }]}>
+                {aligned
+                  ? "On target"
+                  : `Turn ${Math.round(Math.abs(turn.rotation))}\u00B0 ${turn.direction}`}
+              </ThemedText>
+            </>
+          ) : (
+            <View style={styles.fallbackBlock}>
+              <ThemedText style={styles.bearingValue}>{bearingText}</ThemedText>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                TRUE BEARING
+              </ThemedText>
+              <ThemedText type="small" style={{ color: CAUTION_COLOR }}>
+                {heading.status === "active"
+                  ? "True-north compass unavailable on this device. Showing true bearing only."
+                  : "Live compass unavailable. Showing true bearing only."}
+              </ThemedText>
+            </View>
+          )}
+
+          <View style={styles.readoutRow}>
+            <Readout label="TRUE BEARING" value={bearingText} />
+            <Readout
+              label="HEADING"
+              value={trueHeadingDeg != null ? formatBearing(trueHeadingDeg) : "—"}
+            />
+            <Readout label="DISTANCE" value={formatDistance(distanceMeters)} />
+          </View>
+
+          <View style={styles.footerBlock}>
+            <ThemedText type="small" themeColor="textSecondary">
+              Hold the phone flat with its top edge along the boom, pointing toward the directors.
+            </ThemedText>
+            {heading.status === "active" ? (
+              <HeadingAccuracy accuracy={heading.reading.accuracy} theme={theme} />
+            ) : null}
+            <ThemedText
+              type="smallBold"
+              style={{ color: gpsAccuracy.caution ? CAUTION_COLOR : theme.textSecondary }}
+            >
+              {gpsAccuracy.text}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Metal nearby (the antenna, radio, battery, tripod, vehicles, buildings) can skew the
+              compass.
+            </ThemedText>
+            {target.locationWarning ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                {target.locationWarning}
+              </ThemedText>
+            ) : null}
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
+  );
+}
+
+function HeadingAccuracy({
+  accuracy,
+  theme,
+}: {
+  accuracy: number;
+  theme: ReturnType<typeof useTheme>;
+}) {
+  const label = headingAccuracyLabel(accuracy);
+  return (
+    <>
+      <ThemedText
+        type="smallBold"
+        style={{ color: label.poor ? CAUTION_COLOR : theme.textSecondary }}
+      >
+        {label.text}
+      </ThemedText>
+      {label.poor ? (
+        <ThemedText type="small" style={{ color: CAUTION_COLOR }}>
+          Move the phone slowly in a figure-8 to calibrate the compass.
+        </ThemedText>
+      ) : null}
+    </>
+  );
+}
+
+function Readout({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.readout}>
+      <ThemedText style={styles.readoutValue}>{value}</ThemedText>
+      <ThemedText type="smallBold" themeColor="textSecondary">
+        {label}
+      </ThemedText>
+    </View>
   );
 }
 
@@ -163,6 +273,7 @@ function RetryButton({ onPress }: { onPress: () => void }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  flex: { flex: 1 },
   centered: {
     flex: 1,
     alignItems: "center",
@@ -171,18 +282,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
   },
   centerText: { textAlign: "center" },
-  readySafeArea: {
-    flex: 1,
+  scrollContent: {
     paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.four,
-    justifyContent: "space-between",
+    paddingVertical: Spacing.three,
+    gap: Spacing.four,
+    alignItems: "center",
   },
-  headerBlock: { gap: Spacing.one },
-  bearingBlock: { alignItems: "center", gap: Spacing.one },
-  bearingValue: { fontSize: 120, fontWeight: "800", lineHeight: 128 },
-  distanceBlock: { alignItems: "center", gap: Spacing.one },
-  distanceValue: { fontSize: 40, fontWeight: "700" },
-  footerBlock: { gap: Spacing.two },
+  headerBlock: { gap: Spacing.one, alignSelf: "stretch" },
+  turnText: { fontSize: 32, fontWeight: "800" },
+  fallbackBlock: { alignItems: "center", gap: Spacing.one },
+  bearingValue: { fontSize: 96, fontWeight: "800", lineHeight: 104 },
+  readoutRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignSelf: "stretch",
+    gap: Spacing.two,
+  },
+  readout: { flex: 1, alignItems: "center", gap: Spacing.half },
+  readoutValue: { fontSize: 18, fontWeight: "700" },
+  footerBlock: { gap: Spacing.two, alignSelf: "stretch" },
   retry: {
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.five,
