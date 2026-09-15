@@ -1,56 +1,80 @@
-# Welcome to your Expo app 👋
+# Point My Yagi
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An Android-first mobile app built with [Expo](https://expo.dev) (React Native + TypeScript) using [Expo Router](https://docs.expo.dev/router/introduction).
 
-## Get started
+## Prerequisites
 
-1. Install dependencies
+- [Node.js LTS](https://nodejs.org/) (this project is developed on Node 22 LTS).
+  If you use [nvm](https://github.com/nvm-sh/nvm), run `nvm use --lts` (or `nvm install 22`).
+- The [Expo Go](https://play.google.com/store/apps/details?id=host.exp.exponent) app on your Android phone.
+- No Android Studio, Android SDK, or Java is required for the Expo Go workflow below.
 
-   ```bash
-   npm install
-   ```
+## Install dependencies
 
-2. Start the app
+```bash
+npm install
+```
 
-   ```bash
-   npx expo start
-   ```
+## Start the development server
 
-In the output, you'll find options to open the app in a
+```bash
+npx expo start
+```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+This prints a QR code and a Metro URL such as `exp://<your-lan-ip>:8081`.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Run on Android through Expo Go
 
-## Get a fresh project
+1. Put your phone and this computer on the **same Wi-Fi network** (no client isolation).
+2. Start the server: `npx expo start`
+3. Open **Expo Go** on the phone and either scan the QR code shown in the terminal,
+   or tap **Enter URL manually** and type the `exp://<your-lan-ip>:8081` URL from the terminal.
 
-When you're ready, run:
+Fast Refresh is on by default: save a file and the change appears on the phone automatically.
+
+### If the phone cannot connect (LAN blocked)
+
+Some networks block device-to-device traffic. Use a tunnel, which relays through Expo's servers and
+does not require any firewall changes:
+
+```bash
+npx expo start --tunnel
+```
+
+If the machine has more than one active network interface, pin Metro to your Wi-Fi IP:
+
+```bash
+REACT_NATIVE_PACKAGER_HOSTNAME=<your-wifi-ip> npx expo start
+```
+
+## Lint
+
+```bash
+npm run lint
+```
+
+## Type-check
+
+```bash
+npm run typecheck
+```
+
+> Note: `npm run typecheck` relies on generated types in `expo-env.d.ts` and `.expo/types/`.
+> These are created automatically the first time you run `npx expo start`.
+
+## Run tests
+
+No tests are configured yet. Once a test runner (for example Jest via
+[`jest-expo`](https://docs.expo.dev/develop/unit-testing/)) is added with a `test` script, run:
+
+```bash
+npm test
+```
+
+## Reset to a blank app
 
 ```bash
 npm run reset-project
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Moves the starter code to `app-example/` and creates a blank `app/` directory.
