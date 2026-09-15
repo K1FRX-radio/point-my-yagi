@@ -5,7 +5,10 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack />
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="pointing" options={{ title: "Pointing" }} />
+      </Stack>
     </ThemeProvider>
   );
 }
