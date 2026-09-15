@@ -9,10 +9,10 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import {
-    greatCircleDistanceMeters,
-    initialBearingDeg,
-    signedRotation,
-    turnInstruction,
+  greatCircleDistanceMeters,
+  initialBearingDeg,
+  signedRotation,
+  turnInstruction,
 } from "@/domain";
 import { useForegroundLocation } from "@/features/location/use-foreground-location";
 import { PointerArrow } from "@/features/pointing/pointer-arrow";

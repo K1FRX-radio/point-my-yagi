@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 // Scoped to the pure, runtime-independent layers only. These modules must not
@@ -6,5 +7,11 @@ export default defineConfig({
   test: {
     include: ["src/domain/**/*.test.ts", "src/sources/**/*.test.ts"],
     environment: "node",
+  },
+  resolve: {
+    // Mirror the "@/*" path alias from tsconfig so pure modules resolve under Node.
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
   },
 });
