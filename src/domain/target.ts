@@ -10,12 +10,7 @@ export type TargetSourceType = "manual" | "pota" | "repeaterbook" | "qrz";
  * - `low`: derived from ZIP/state/country (e.g. some QRZ records).
  * - `unknown`: source did not indicate quality.
  */
-export type TargetPrecision =
-  | "exact"
-  | "high"
-  | "approximate"
-  | "low"
-  | "unknown";
+export type TargetPrecision = "exact" | "high" | "approximate" | "low" | "unknown";
 
 /** A place to point the antenna at, normalized across all sources. */
 export interface Target {

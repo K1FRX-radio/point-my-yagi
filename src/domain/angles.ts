@@ -15,10 +15,7 @@ export function normalizeDegrees(deg: number): number {
  * Result is in (-180, 180]: positive means turn clockwise (right), negative
  * means counterclockwise (left). An exact reversal returns +180.
  */
-export function signedRotation(
-  fromHeadingDeg: number,
-  toBearingDeg: number,
-): number {
+export function signedRotation(fromHeadingDeg: number, toBearingDeg: number): number {
   const diff = normalizeDegrees(toBearingDeg - fromHeadingDeg);
   return diff > 180 ? diff - 360 : diff;
 }

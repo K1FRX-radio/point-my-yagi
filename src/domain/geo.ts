@@ -22,8 +22,7 @@ export function initialBearingDeg(from: LatLon, to: LatLon): number {
 
   const y = Math.sin(deltaLambda) * Math.cos(phi2);
   const x =
-    Math.cos(phi1) * Math.sin(phi2) -
-    Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLambda);
+    Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLambda);
 
   return normalizeDegrees(Math.atan2(y, x) / DEG_TO_RAD);
 }
@@ -39,8 +38,7 @@ export function greatCircleDistanceMeters(from: LatLon, to: LatLon): number {
   const deltaLambda = (to.longitude - from.longitude) * DEG_TO_RAD;
 
   const a =
-    Math.sin(deltaPhi / 2) ** 2 +
-    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) ** 2;
+    Math.sin(deltaPhi / 2) ** 2 + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return EARTH_MEAN_RADIUS_METERS * c;

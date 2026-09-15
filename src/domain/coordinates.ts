@@ -10,32 +10,21 @@ export const LONGITUDE_MIN = -180;
 export const LONGITUDE_MAX = 180;
 
 /** Result of parsing untrusted input at a system boundary. */
-export type ParseResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; error: string };
+export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
 export function validateLatitude(value: number): boolean {
-  return (
-    isFiniteNumber(value) && value >= LATITUDE_MIN && value <= LATITUDE_MAX
-  );
+  return isFiniteNumber(value) && value >= LATITUDE_MIN && value <= LATITUDE_MAX;
 }
 
 export function validateLongitude(value: number): boolean {
-  return (
-    isFiniteNumber(value) && value >= LONGITUDE_MIN && value <= LONGITUDE_MAX
-  );
+  return isFiniteNumber(value) && value >= LONGITUDE_MIN && value <= LONGITUDE_MAX;
 }
 
-function parseDegrees(
-  input: string,
-  label: string,
-  min: number,
-  max: number,
-): ParseResult<number> {
+function parseDegrees(input: string, label: string, min: number, max: number): ParseResult<number> {
   const trimmed = input.trim();
   if (trimmed === "") {
     return { ok: false, error: `${label} is required.` };

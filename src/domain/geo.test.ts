@@ -24,29 +24,18 @@ describe("initialBearingDeg", () => {
 
   it("handles the antimeridian eastbound (179 -> -179) as due east", () => {
     expect(
-      initialBearingDeg(
-        { latitude: 0, longitude: 179 },
-        { latitude: 0, longitude: -179 },
-      ),
+      initialBearingDeg({ latitude: 0, longitude: 179 }, { latitude: 0, longitude: -179 }),
     ).toBeCloseTo(90, 6);
   });
 
   it("handles the antimeridian westbound (-179 -> 179) as due west", () => {
     expect(
-      initialBearingDeg(
-        { latitude: 0, longitude: -179 },
-        { latitude: 0, longitude: 179 },
-      ),
+      initialBearingDeg({ latitude: 0, longitude: -179 }, { latitude: 0, longitude: 179 }),
     ).toBeCloseTo(270, 6);
   });
 
   it("returns 0 for identical points", () => {
-    expect(
-      initialBearingDeg(
-        { latitude: 5, longitude: 5 },
-        { latitude: 5, longitude: 5 },
-      ),
-    ).toBe(0);
+    expect(initialBearingDeg({ latitude: 5, longitude: 5 }, { latitude: 5, longitude: 5 })).toBe(0);
   });
 
   it("matches the published Land\u2019s End -> John o\u2019 Groats example", () => {
@@ -72,17 +61,12 @@ describe("greatCircleDistanceMeters", () => {
     const p1: LatLon = { latitude: 50.0663889, longitude: -5.7147222 };
     const p2: LatLon = { latitude: 58.6438889, longitude: -3.07 };
     // Published ~968.9 km; allow 2 km for spherical-vs-ellipsoidal difference.
-    expect(Math.abs(greatCircleDistanceMeters(p1, p2) - 968900)).toBeLessThan(
-      2000,
-    );
+    expect(Math.abs(greatCircleDistanceMeters(p1, p2) - 968900)).toBeLessThan(2000);
   });
 
   it("is symmetric", () => {
     const a: LatLon = { latitude: 40.7128, longitude: -74.006 };
     const b: LatLon = { latitude: 51.5074, longitude: -0.1278 };
-    expect(greatCircleDistanceMeters(a, b)).toBeCloseTo(
-      greatCircleDistanceMeters(b, a),
-      6,
-    );
+    expect(greatCircleDistanceMeters(a, b)).toBeCloseTo(greatCircleDistanceMeters(b, a), 6);
   });
 });

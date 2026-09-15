@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-    parseLatitude,
-    parseLongitude,
-    validateLatitude,
-    validateLongitude,
-} from "./coordinates";
+import { parseLatitude, parseLongitude, validateLatitude, validateLongitude } from "./coordinates";
 
 describe("validateLatitude", () => {
   const cases: [value: number, expected: boolean][] = [
