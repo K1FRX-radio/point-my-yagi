@@ -3,12 +3,14 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors } from "@/constants/theme";
+import { Colors, HighContrastColors } from "@/constants/theme";
+import { usePreferences } from "@/features/preferences/preferences-provider";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export function useTheme() {
   const scheme = useColorScheme();
   const theme = scheme === "unspecified" ? "light" : scheme;
+  const { preferences } = usePreferences();
 
-  return Colors[theme];
+  return preferences.highContrast ? HighContrastColors[theme] : Colors[theme];
 }

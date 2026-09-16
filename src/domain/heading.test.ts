@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { blendAngleDeg, turnInstruction } from "./heading";
+import { blendAngleDeg, declinationFromHeadings, trueToMagnetic, turnInstruction } from "./heading";
 
 describe("blendAngleDeg", () => {
   it("returns the previous angle when alpha is 0", () => {
@@ -58,4 +58,20 @@ describe("turnInstruction", () => {
       expect(result.aligned).toBe(aligned);
     },
   );
+});
+
+describe("declination and magnetic conversion", () => {
+  it("derives declination as true minus magnetic", () => {
+    // true = mag + declination; here 15 = 5 + 10.
+    expect(declinationFromHeadings(15, 5)).toBeCloseTo(10, 6);
+    // West declination (true less than magnetic) is negative.
+    expect(declinationFromHeadings(350, 5)).toBeCloseTo(-15, 6);
+  });
+
+  it("converts a true bearing to magnetic and round-trips", () => {
+    expect(trueToMagnetic(41, 10)).toBeCloseTo(31, 6);
+    expect(trueToMagnetic(5, 10)).toBeCloseTo(355, 6);
+    const declination = declinationFromHeadings(41, 31);
+    expect(trueToMagnetic(41, declination)).toBeCloseTo(31, 6);
+  });
 });

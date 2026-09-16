@@ -26,6 +26,27 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+/**
+ * High-contrast outdoor palettes: pure black/white with strong secondary-text
+ * contrast for readability in bright sun.
+ */
+export const HighContrastColors = {
+  light: {
+    text: "#000000",
+    background: "#ffffff",
+    backgroundElement: "#E6E6E6",
+    backgroundSelected: "#CFCFCF",
+    textSecondary: "#000000",
+  },
+  dark: {
+    text: "#ffffff",
+    background: "#000000",
+    backgroundElement: "#1A1A1A",
+    backgroundSelected: "#333333",
+    textSecondary: "#FFFFFF",
+  },
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

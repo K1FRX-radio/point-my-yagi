@@ -18,6 +18,7 @@ import { bandForMhz, greatCircleDistanceMeters, type Target } from "@/domain";
 import { useWorkedToday } from "@/features/contacts/use-worked-today";
 import { useForegroundLocation } from "@/features/location/use-foreground-location";
 import { usePotaSpots } from "@/features/pota/use-pota-spots";
+import { pointingHref } from "@/features/targets/target-params";
 import { useTheme } from "@/hooks/use-theme";
 import { filterTargets } from "@/sources";
 
@@ -141,18 +142,7 @@ export function PotaScreen() {
   }, [targets, text, region, band, mode, near, hideWorked, isWorked]);
 
   function openTarget(target: Target) {
-    router.push({
-      pathname: "/pointing",
-      params: {
-        latitude: String(target.latitude),
-        longitude: String(target.longitude),
-        name: target.name,
-        sourceLabel: target.sourceLabel,
-        precision: target.precision,
-        grid: target.grid ?? "",
-        locationWarning: target.locationWarning ?? "",
-      },
-    });
+    router.push(pointingHref(target));
   }
 
   const inputStyle = [

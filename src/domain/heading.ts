@@ -37,3 +37,16 @@ export function turnInstruction(
   const direction: TurnDirection = aligned ? "aligned" : rotation > 0 ? "right" : "left";
   return { rotation, direction, aligned };
 }
+
+/**
+ * Magnetic declination (degrees) from a paired true/magnetic heading reading:
+ * trueHeading = magneticHeading + declination.
+ */
+export function declinationFromHeadings(trueDeg: number, magneticDeg: number): number {
+  return signedRotation(magneticDeg, trueDeg);
+}
+
+/** Convert a true bearing/heading to magnetic given the local declination. */
+export function trueToMagnetic(trueDeg: number, declinationDeg: number): number {
+  return normalizeDegrees(trueDeg - declinationDeg);
+}

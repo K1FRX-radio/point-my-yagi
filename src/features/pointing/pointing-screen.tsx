@@ -9,18 +9,22 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import {
+  declinationFromHeadings,
+  formatDistance,
   greatCircleDistanceMeters,
   initialBearingDeg,
   signedRotation,
+  trueToMagnetic,
   turnInstruction,
 } from "@/domain";
 import { useForegroundLocation } from "@/features/location/use-foreground-location";
 import { PointerArrow } from "@/features/pointing/pointer-arrow";
 import { useHeading } from "@/features/pointing/use-heading";
+import { usePreferences } from "@/features/preferences/preferences-provider";
+import { decodeTargetParam } from "@/features/targets/target-params";
+import { useTargetLists } from "@/features/targets/use-target-lists";
 import { useTheme } from "@/hooks/use-theme";
 
-const METERS_PER_MILE = 1609.344;
-const ALIGN_TOLERANCE_DEG = 5;
 const ALIGNED_COLOR = "#12A150";
 const CAUTION_COLOR = "#C7791B";
 
@@ -31,15 +35,6 @@ function single(value: string | string[] | undefined): string {
 function formatBearing(deg: number): string {
   const rounded = Math.round(deg) % 360;
   return `${String(rounded).padStart(3, "0")}\u00B0`;
-}
-
-function formatDistance(meters: number): string {
-  const km = meters / 1000;
-  const miles = meters / METERS_PER_MILE;
-  if (km < 1) {
-    return `${Math.round(meters)} m / ${(miles * 5280).toFixed(0)} ft`;
-  }
-  return `${km.toFixed(1)} km / ${miles.toFixed(1)} mi`;
 }
 
 function gpsAccuracyLabel(meters: number | null): { text: string; caution: boolean } {
@@ -57,19 +52,32 @@ function headingAccuracyLabel(accuracy: number): { text: string; poor: boolean }
 
 export function PointingScreen() {
   const theme = useTheme();
+  const { preferences } = usePreferences();
   useKeepAwake();
 
   const params = useLocalSearchParams<Record<string, string | string[]>>();
   const { state, refresh } = useForegroundLocation();
   const heading = useHeading();
+  const { isFavorite, toggleFavorite, addRecent } = useTargetLists();
 
+  const pointedTarget = decodeTargetParam(single(params.target));
   const target = {
-    latitude: Number(single(params.latitude)),
-    longitude: Number(single(params.longitude)),
-    name: single(params.name) || "Target",
-    sourceLabel: single(params.sourceLabel) || "Manual",
-    locationWarning: single(params.locationWarning),
+    latitude: pointedTarget?.latitude ?? Number.NaN,
+    longitude: pointedTarget?.longitude ?? Number.NaN,
+    name: pointedTarget?.name ?? "Target",
+    sourceLabel: pointedTarget?.sourceLabel ?? "Manual",
+    precision: pointedTarget?.precision ?? "high",
+    locationWarning: pointedTarget?.locationWarning ?? "",
   };
+
+  const targetId = pointedTarget?.id;
+  useEffect(() => {
+    if (pointedTarget) {
+      addRecent(pointedTarget);
+    }
+    // Only re-run when the target identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetId, addRecent]);
 
   const from =
     state.status === "ready" ? { latitude: state.latitude, longitude: state.longitude } : null;
@@ -77,20 +85,43 @@ export function PointingScreen() {
     ? initialBearingDeg(from, { latitude: target.latitude, longitude: target.longitude })
     : null;
 
-  const trueHeadingDeg = heading.status === "active" ? heading.reading.trueDeg : null;
+  const reading = heading.status === "active" ? heading.reading : null;
+  const trueHeadingDeg = reading?.trueDeg ?? null;
+  const declination =
+    trueHeadingDeg != null && reading != null
+      ? declinationFromHeadings(trueHeadingDeg, reading.magneticDeg)
+      : null;
+  // The pointer always works in the true frame; display can be true or magnetic.
+  const useMagnetic = preferences.bearingDisplay === "magnetic" && declination != null;
+  const displayBearing =
+    bearing == null ? null : useMagnetic ? trueToMagnetic(bearing, declination!) : bearing;
+  const displayHeading = useMagnetic ? (reading?.magneticDeg ?? null) : trueHeadingDeg;
+  const frameLabel = useMagnetic ? "MAG" : "TRUE";
+
   const turn =
     bearing != null && trueHeadingDeg != null
-      ? turnInstruction(trueHeadingDeg, bearing, ALIGN_TOLERANCE_DEG)
+      ? turnInstruction(trueHeadingDeg, bearing, preferences.alignmentToleranceDeg)
       : null;
   const aligned = turn?.aligned ?? false;
 
   const wasAligned = useRef(false);
   useEffect(() => {
-    if (aligned && !wasAligned.current) {
+    if (aligned && !wasAligned.current && preferences.hapticsNearAlignment) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     wasAligned.current = aligned;
-  }, [aligned]);
+  }, [aligned, preferences.hapticsNearAlignment]);
+
+  if (!pointedTarget) {
+    return (
+      <Centered>
+        <ThemedText type="subtitle">No target</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.centerText}>
+          Go back and choose a target to point at.
+        </ThemedText>
+      </Centered>
+    );
+  }
 
   if (state.status === "loading") {
     return (
@@ -132,14 +163,35 @@ export function PointingScreen() {
     { latitude: target.latitude, longitude: target.longitude },
   );
   const gpsAccuracy = gpsAccuracyLabel(state.accuracyMeters);
-  const bearingText = bearing != null ? formatBearing(bearing) : "—";
+  const bearingText = displayBearing != null ? formatBearing(displayBearing) : "\u2014";
+  const headingText = displayHeading != null ? formatBearing(displayHeading) : "\u2014";
+  const distanceText = formatDistance(distanceMeters, preferences.distanceUnit);
+  const compassAccuracy = reading?.accuracy ?? null;
+  const showInterferenceNote = compassAccuracy != null && compassAccuracy < 3;
+  const showLocationWarning = Boolean(target.locationWarning) && target.precision !== "high";
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.flex} edges={["bottom"]}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.headerBlock}>
-            <ThemedText type="subtitle">{target.name}</ThemedText>
+            <View style={styles.headerRow}>
+              <ThemedText type="subtitle" style={styles.headerName}>
+                {target.name}
+              </ThemedText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isFavorite(pointedTarget.id) ? "Remove favorite" : "Add favorite"
+                }
+                onPress={() => toggleFavorite(pointedTarget)}
+                hitSlop={10}
+              >
+                <ThemedText style={styles.star}>
+                  {isFavorite(pointedTarget.id) ? "\u2605" : "\u2606"}
+                </ThemedText>
+              </Pressable>
+            </View>
             <ThemedText type="smallBold" themeColor="textSecondary">
               Source: {target.sourceLabel}
             </ThemedText>
@@ -163,23 +215,20 @@ export function PointingScreen() {
             <View style={styles.fallbackBlock}>
               <ThemedText style={styles.bearingValue}>{bearingText}</ThemedText>
               <ThemedText type="smallBold" themeColor="textSecondary">
-                TRUE BEARING
+                {frameLabel} BEARING
               </ThemedText>
               <ThemedText type="small" style={{ color: CAUTION_COLOR }}>
                 {heading.status === "active"
-                  ? "True-north compass unavailable on this device. Showing true bearing only."
-                  : "Live compass unavailable. Showing true bearing only."}
+                  ? "True-north compass unavailable on this device. Showing bearing only."
+                  : "Live compass unavailable. Showing bearing only."}
               </ThemedText>
             </View>
           )}
 
           <View style={styles.readoutRow}>
-            <Readout label="TRUE BEARING" value={bearingText} />
-            <Readout
-              label="HEADING"
-              value={trueHeadingDeg != null ? formatBearing(trueHeadingDeg) : "—"}
-            />
-            <Readout label="DISTANCE" value={formatDistance(distanceMeters)} />
+            <Readout label={`${frameLabel} BEARING`} value={bearingText} />
+            <Readout label={`HEADING (${frameLabel})`} value={headingText} />
+            <Readout label="DISTANCE" value={distanceText} />
           </View>
 
           <View style={styles.footerBlock}>
@@ -195,11 +244,13 @@ export function PointingScreen() {
             >
               {gpsAccuracy.text}
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              Metal nearby (the antenna, radio, battery, tripod, vehicles, buildings) can skew the
-              compass.
-            </ThemedText>
-            {target.locationWarning ? (
+            {showInterferenceNote ? (
+              <ThemedText type="small" themeColor="textSecondary">
+                Metal nearby (the antenna, radio, battery, tripod, vehicles, buildings) can skew the
+                compass.
+              </ThemedText>
+            ) : null}
+            {showLocationWarning ? (
               <ThemedText type="small" themeColor="textSecondary">
                 {target.locationWarning}
               </ThemedText>
@@ -289,6 +340,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerBlock: { gap: Spacing.one, alignSelf: "stretch" },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerName: { flex: 1 },
+  star: { fontSize: 28, lineHeight: 32 },
   turnText: { fontSize: 32, fontWeight: "800" },
   fallbackBlock: { alignItems: "center", gap: Spacing.one },
   bearingValue: { fontSize: 96, fontWeight: "800", lineHeight: 104 },

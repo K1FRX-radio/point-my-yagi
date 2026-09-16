@@ -7,6 +7,8 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import { buildManualTarget, type ManualTargetInput } from "@/domain";
+import { FirstRunTip } from "@/features/onboarding/first-run-tip";
+import { pointingHref } from "@/features/targets/target-params";
 import { useTheme } from "@/hooks/use-theme";
 
 type EntryMode = "coordinates" | "grid";
@@ -36,20 +38,7 @@ export function ManualTargetScreen() {
 
     setError(null);
     const target = result.value;
-    router.push({
-      pathname: "/pointing",
-      params: {
-        latitude: String(target.latitude),
-        longitude: String(target.longitude),
-        name: target.name,
-        sourceLabel: target.sourceLabel,
-        precision: target.precision,
-        grid: target.grid ?? "",
-        locationWarning: target.locationWarning ?? "",
-        uncertaintyRadiusMeters:
-          target.uncertaintyRadiusMeters != null ? String(target.uncertaintyRadiusMeters) : "",
-      },
-    });
+    router.push(pointingHref(target));
   }
 
   const inputStyle = [
@@ -63,6 +52,7 @@ export function ManualTargetScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <FirstRunTip />
       <SafeAreaView style={styles.safeArea}>
         <ThemedText type="title" style={styles.title}>
           Point My Yagi
@@ -164,6 +154,26 @@ export function ManualTargetScreen() {
         >
           <ThemedText type="link" themeColor="textSecondary">
             RepeaterBook (pending approval)
+          </ThemedText>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/targets")}
+          style={({ pressed }) => [styles.secondary, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <ThemedText type="link" themeColor="textSecondary">
+            Favorites &amp; recent
+          </ThemedText>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/settings")}
+          style={({ pressed }) => [styles.secondary, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <ThemedText type="link" themeColor="textSecondary">
+            Settings
           </ThemedText>
         </Pressable>
       </SafeAreaView>
