@@ -9,6 +9,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="pointing" options={{ title: "Pointing" }} />
         <Stack.Screen name="pota" options={{ title: "POTA spots" }} />
+        <Stack.Screen name="repeaterbook" options={{ title: "RepeaterBook" }} />
       </Stack>
     </ThemeProvider>
   );

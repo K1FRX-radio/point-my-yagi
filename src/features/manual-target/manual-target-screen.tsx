@@ -156,6 +156,16 @@ export function ManualTargetScreen() {
             Browse POTA spots (experimental)
           </ThemedText>
         </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/repeaterbook")}
+          style={({ pressed }) => [styles.secondary, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <ThemedText type="link" themeColor="textSecondary">
+            RepeaterBook (pending approval)
+          </ThemedText>
+        </Pressable>
       </SafeAreaView>
     </ThemedView>
   );

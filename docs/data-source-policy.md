@@ -55,10 +55,52 @@ publicly distributed app.
   rate/caching rules, and record the outcome here.
 - Attribution shown in-app: "Spots courtesy of POTA (pota.app)".
 
-## RepeaterBook — not yet implemented (Milestone 6)
+## RepeaterBook — implemented behind a feature flag (Milestone 6)
 
-Requires prior application approval per the RepeaterBook API policy. Live calls
-stay disabled by default until approved.
+- **Policy reviewed:** 2026-09-16, from https://www.repeaterbook.com/wiki/doku.php?id=api
+- **Status: NOT APPROVED. Live calls are DISABLED by default** (`featureFlags.repeaterBook = false`).
+
+### What the policy requires (as of the review date)
+
+- API access is approval-first (since 2026-03-03). Unapproved clients are denied.
+- Two token models. For a user-installed mobile app we are a **distributed/client
+  application**: we must NOT embed a shared `app_` token. Each user generates
+  their own app-bound `rbuapp_` token from https://www.repeaterbook.com/user/api_apps.php
+  and pastes it into the app.
+- Token is sent in the `X-RB-App-Token` header (preferred) or `Authorization:
+Bearer`. Store it only in secure device storage; never in the repo/logs/URLs.
+- A stable, identifying `User-Agent` is required (app name/version + contact
+  email). Generic UAs are rejected. See `REPEATERBOOK_USER_AGENT` in the source;
+  the contact must be a real, reachable address before requesting approval.
+- Endpoints: `api/export.php` (North America) and `api/exportROW.php` (rest of
+  world), JSON. Export scopes: `api.export`, `api.export_row`.
+- Attribution required: "Data courtesy of RepeaterBook.com" and link to the
+  relevant RepeaterBook detail page.
+- Rate limits are unpublished; back off immediately on HTTP 429. Do not retry
+  auth/scope/User-Agent errors without fixing the cause.
+- Non-competition: do NOT build a public repeater directory, map, nearby-finder,
+  export/feed, or a redistributable database. Our narrow "select one repeater and
+  point the antenna at it" workflow is the more-likely-approvable category, but is
+  still gated.
+
+### What is implemented now (no live calls)
+
+- A `RepeaterBookTargetSource` that returns a clear permission/pending-approval
+  error while the feature flag is off, and never performs a network request in
+  that state.
+- Schema mapping coded against a local fixture (`__fixtures__/export-records.json`),
+  which must be re-verified against the live response once access is approved.
+- A secure token store (`expo-secure-store`) for the per-user `rbuapp_` token.
+- Attribution + per-record detail links on mapped targets.
+- Only the minimum fields needed for pointing are mapped (coords, callsign,
+  frequency, mode, name, detail link).
+
+### Before enabling in a build
+
+1. Apply as a distributed app: https://www.repeaterbook.com/api/token_request.php
+2. Set `REPEATERBOOK_USER_AGENT` to a real app id + reachable contact email.
+3. Verify the live JSON shape against the fixture and fix the mapping if needed.
+4. Flip `featureFlags.repeaterBook` to `true` and ship the token-entry UI.
 
 ## QRZ — not yet implemented (Milestone 7)
 

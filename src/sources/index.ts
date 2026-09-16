@@ -19,6 +19,12 @@ export {
 } from "./pota/pota-source";
 export { TargetSourceRegistry } from "./registry";
 export {
+  REPEATERBOOK_API_BASE,
+  REPEATERBOOK_USER_AGENT,
+  RepeaterBookTargetSource,
+  type RepeaterBookSourceOptions,
+} from "./repeaterbook/repeaterbook-source";
+export {
   asArray,
   asRecord,
   getNumber,

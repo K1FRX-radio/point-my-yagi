@@ -1,0 +1,58 @@
+{
+  "count": "3",
+  "results": [
+    {
+      "State ID": "06",
+      "Rptr ID": "1001",
+      "Frequency": "146.94000",
+      "Input Freq": "146.34000",
+      "PL": "100.0",
+      "TSQ": "",
+      "Callsign": "W6ABC",
+      "Use": "OPEN",
+      "Operational Status": "On-air",
+      "Lat": "37.7749",
+      "Long": "-122.4194",
+      "Precise": "1",
+      "Nearest City": "San Francisco",
+      "Landmark": "",
+      "County": "San Francisco",
+      "State": "California",
+      "Country": "United States",
+      "Mode": "analog",
+      "Last Update": "2026-01-01"
+    },
+    {
+      "State ID": "48",
+      "Rptr ID": "2002",
+      "Frequency": "444.30000",
+      "Input Freq": "449.30000",
+      "PL": "162.2",
+      "TSQ": "",
+      "Callsign": "K5XYZ",
+      "Use": "OPEN",
+      "Operational Status": "On-air",
+      "Lat": "30.2672",
+      "Long": "-97.7431",
+      "Precise": "0",
+      "Nearest City": "Austin",
+      "County": "Travis",
+      "State": "Texas",
+      "Country": "United States",
+      "Mode": "DMR",
+      "Last Update": "2026-02-02"
+    },
+    {
+      "State ID": "99",
+      "Rptr ID": "3003",
+      "Frequency": "145.00000",
+      "Callsign": "N0LOC",
+      "Lat": "",
+      "Long": "",
+      "Nearest City": "Nowhere",
+      "State": "Unknown",
+      "Country": "United States",
+      "Mode": "analog"
+    }
+  ]
+}
