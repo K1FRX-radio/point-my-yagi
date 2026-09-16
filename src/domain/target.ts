@@ -26,8 +26,12 @@ export interface Target {
   frequencyMhz?: number;
   mode?: string;
   callsign?: string;
+  /** The source's own stable record id (e.g. a POTA park reference "US-0370"). */
+  sourceRecordId?: string;
   /** Maidenhead grid locator, when known. */
   grid?: string;
+  /** Administrative region code(s), e.g. "US-MN" or "US-NC,US-VA". */
+  adminRegion?: string;
   /** Link to the source record, for attribution/details. */
   detailUrl?: string;
   precision: TargetPrecision;
@@ -35,4 +39,6 @@ export interface Target {
   uncertaintyRadiusMeters?: number;
   /** Human-readable caveat about the location, e.g. park-vs-operator position. */
   locationWarning?: string;
+  /** When this target's information was observed (epoch ms), for staleness. */
+  observedAt?: number;
 }

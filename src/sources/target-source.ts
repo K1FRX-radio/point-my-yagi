@@ -22,6 +22,14 @@ export interface SearchRequest {
   text?: string;
   near?: LatLon;
   maxResults?: number;
+  /** Filter to a single amateur band label, e.g. "20m". */
+  band?: string;
+  /** Filter to a single mode, matched case-insensitively, e.g. "FT8". */
+  mode?: string;
+  /** Filter by grid or administrative region substring, e.g. "EN", "US-MN", "US". */
+  region?: string;
+  /** Filter out results farther than this from `near` (requires `near`). */
+  maxDistanceKm?: number;
 }
 
 /** Query for sources that resolve a single record by identifier (repeater, callsign, park). */

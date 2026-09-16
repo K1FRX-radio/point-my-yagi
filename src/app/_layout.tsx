@@ -8,6 +8,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="pointing" options={{ title: "Pointing" }} />
+        <Stack.Screen name="pota" options={{ title: "POTA spots" }} />
       </Stack>
     </ThemeProvider>
   );

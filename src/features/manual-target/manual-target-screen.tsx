@@ -146,6 +146,16 @@ export function ManualTargetScreen() {
             Point at target
           </ThemedText>
         </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/pota")}
+          style={({ pressed }) => [styles.secondary, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <ThemedText type="link" themeColor="textSecondary">
+            Browse POTA spots (experimental)
+          </ThemedText>
+        </Pressable>
       </SafeAreaView>
     </ThemedView>
   );
@@ -219,4 +229,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitLabel: { fontSize: 20, fontWeight: "700" },
+  secondary: { alignItems: "center", paddingVertical: Spacing.two },
 });

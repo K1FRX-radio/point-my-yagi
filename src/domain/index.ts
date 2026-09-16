@@ -17,4 +17,6 @@ export { isValidMaidenhead, maidenheadToCenter } from "./maidenhead";
 export type { MaidenheadLength } from "./maidenhead";
 export { buildManualTarget } from "./manual-target";
 export type { ManualCoordinateInput, ManualGridInput, ManualTargetInput } from "./manual-target";
+export { bandForMhz, frequencyKhzToMhz } from "./radio";
 export type { Target, TargetPrecision, TargetSourceType } from "./target";
+export { utcDayKey, workedKey } from "./worked";

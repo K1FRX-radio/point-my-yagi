@@ -9,7 +9,14 @@ export {
   unavailableError,
 } from "./errors";
 export type { SourceError, SourceErrorCategory, SourceResult } from "./errors";
+export { filterTargets } from "./filter-targets";
 export { ManualTargetSource } from "./manual/manual-source";
+export {
+  POTA_ACTIVATOR_ENDPOINT,
+  PotaTargetSource,
+  type FetchLike,
+  type PotaSourceOptions,
+} from "./pota/pota-source";
 export { TargetSourceRegistry } from "./registry";
 export {
   asArray,
