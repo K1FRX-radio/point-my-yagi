@@ -1,36 +1,43 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { containsTarget, toggleFavorite, upsertRecent, type Target } from "@/domain";
+import {
+  containsTarget,
+  toggleFavorite,
+  toSavedTarget,
+  upsertRecent,
+  type SavedTarget,
+  type Target,
+} from "@/domain";
 
 const FAVORITES_KEY = "pmy.favorites.v1";
 const RECENTS_KEY = "pmy.recents.v1";
 const RECENTS_CAP = 15;
 
-function parseTargets(raw: string | null): Target[] {
+function parseSaved(raw: string | null): SavedTarget[] {
   if (!raw) {
     return [];
   }
   try {
     const value = JSON.parse(raw);
-    return Array.isArray(value) ? (value as Target[]) : [];
+    return Array.isArray(value) ? (value as SavedTarget[]) : [];
   } catch {
     return [];
   }
 }
 
 export interface TargetLists {
-  favorites: Target[];
-  recents: Target[];
+  favorites: SavedTarget[];
+  recents: SavedTarget[];
   isFavorite: (id: string) => boolean;
-  toggleFavorite: (target: Target) => void;
+  toggleFavorite: (target: Target | SavedTarget) => void;
   addRecent: (target: Target) => void;
 }
 
 /** Offline favorites and recent targets, persisted with AsyncStorage. */
 export function useTargetLists(): TargetLists {
-  const [favorites, setFavorites] = useState<Target[]>([]);
-  const [recents, setRecents] = useState<Target[]>([]);
+  const [favorites, setFavorites] = useState<SavedTarget[]>([]);
+  const [recents, setRecents] = useState<SavedTarget[]>([]);
   const loaded = useRef(false);
 
   useEffect(() => {
@@ -42,8 +49,8 @@ export function useTargetLists(): TargetLists {
           AsyncStorage.getItem(RECENTS_KEY),
         ]);
         if (active) {
-          setFavorites(parseTargets(favRaw));
-          setRecents(parseTargets(recRaw));
+          setFavorites(parseSaved(favRaw));
+          setRecents(parseSaved(recRaw));
         }
       } catch {
         // ignore: start empty
@@ -73,12 +80,12 @@ export function useTargetLists(): TargetLists {
     AsyncStorage.setItem(RECENTS_KEY, JSON.stringify(recents)).catch(() => {});
   }, [recents]);
 
-  const toggle = useCallback((target: Target) => {
-    setFavorites((prev) => toggleFavorite(prev, target));
+  const toggle = useCallback((target: Target | SavedTarget) => {
+    setFavorites((prev) => toggleFavorite(prev, toSavedTarget(target)));
   }, []);
 
   const addRecent = useCallback((target: Target) => {
-    setRecents((prev) => upsertRecent(prev, target, RECENTS_CAP));
+    setRecents((prev) => upsertRecent(prev, toSavedTarget(target), RECENTS_CAP));
   }, []);
 
   const isFavorite = useCallback((id: string) => containsTarget(favorites, id), [favorites]);

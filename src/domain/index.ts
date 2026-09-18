@@ -18,6 +18,8 @@ export type { MaidenheadLength } from "./maidenhead";
 export { buildManualTarget } from "./manual-target";
 export type { ManualCoordinateInput, ManualGridInput, ManualTargetInput } from "./manual-target";
 export { bandForMhz, frequencyKhzToMhz } from "./radio";
+export { isSavedRef, toSavedTarget } from "./saved-target";
+export type { SavedTarget, SavedTargetRef } from "./saved-target";
 export type { Target, TargetPrecision, TargetSourceType } from "./target";
 export { containsTarget, toggleFavorite, upsertRecent } from "./target-lists";
 export { formatDistance } from "./units";

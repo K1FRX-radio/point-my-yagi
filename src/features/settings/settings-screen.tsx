@@ -1,13 +1,13 @@
 import { ScrollView, StyleSheet, Switch, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Segmented } from "@/components/segmented";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
 import { TOLERANCE_OPTIONS } from "@/features/preferences/preferences";
 import { usePreferences } from "@/features/preferences/preferences-provider";
-import { Segmented } from "@/components/segmented";
+import { useTheme } from "@/hooks/use-theme";
 
 export function SettingsScreen() {
   const theme = useTheme();

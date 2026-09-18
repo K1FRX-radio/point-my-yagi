@@ -1,5 +1,7 @@
 # Point My Yagi
 
+Accurately aiming a directional, tight-beam antenna like a Yagi is tricky and takes real calculation. An aid is valuable in plenty of situations: chasing POTA, SOTA, or IOTA activations, or quickly re-aiming toward a different local repeater to follow a net or a conversation. Those are the situations that motivated Point My Yagi.
+
 An Android-first mobile app built with [Expo](https://expo.dev) (React Native + TypeScript) using [Expo Router](https://docs.expo.dev/router/introduction).
 
 ## Prerequisites

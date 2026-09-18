@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Modal, Pressable, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";

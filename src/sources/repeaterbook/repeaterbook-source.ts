@@ -148,8 +148,13 @@ export class RepeaterBookTargetSource implements TargetSource {
       const root = asRecord(json, "response");
       const results = asArray(root.results ?? [], "response.results");
       const targets = mapRepeaterBookRecords(results);
-      // `text` drove the server-side callsign query; don't re-filter on it here.
-      return { ok: true, value: filterTargets(targets, { ...request, text: undefined }) };
+      // Targeted callsign lookup only: the callsign drove the server query, so we
+      // do not apply band/mode/region browse filters here. Keep optional
+      // nearest-first sorting and a small cap for disambiguation.
+      return {
+        ok: true,
+        value: filterTargets(targets, { near: request.near, maxResults: request.maxResults ?? 25 }),
+      };
     } catch (error) {
       if (error instanceof SchemaError) {
         return { ok: false, error: parsingError(error.message, error) };

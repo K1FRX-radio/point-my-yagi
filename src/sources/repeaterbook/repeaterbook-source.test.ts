@@ -74,6 +74,24 @@ describe("RepeaterBookTargetSource (enabled)", () => {
     expect(init?.headers?.["User-Agent"]).toContain("PointMyYagi/test");
   });
 
+  it("ignores band/mode/region browse filters (targeted callsign lookup only)", async () => {
+    const { source } = enabledSource();
+    const result = await source.search({ text: "W6ABC", mode: "SSB", band: "70cm", region: "ZZ" });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.map((t) => t.callsign)).toEqual(["W6ABC", "K5XYZ"]);
+    }
+  });
+
+  it("caps results to the requested maximum", async () => {
+    const { source } = enabledSource();
+    const result = await source.search({ text: "x", maxResults: 1 });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toHaveLength(1);
+    }
+  });
+
   it("maps HTTP 429 to a rate-limit error", async () => {
     const { source } = enabledSource({ status: 429, body: { code: "rate_limited" } });
     const result = await source.search({ text: "x" });
