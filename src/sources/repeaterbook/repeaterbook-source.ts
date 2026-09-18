@@ -20,7 +20,7 @@ export const REPEATERBOOK_API_BASE = "https://www.repeaterbook.com/api";
 // Identifies this app to RepeaterBook. The contact MUST be a real, reachable
 // address before requesting API approval (a generic UA is rejected by policy).
 export const REPEATERBOOK_USER_AGENT =
-  "PointMyYagi/0.1 (+https://github.com/K1FRX-radio/point-my-yagi; contact@example.invalid)";
+  "PointMyYagi/1.0 (+https://github.com/K1FRX-radio/point-my-yagi; k1frxradio@gmail.com)";
 
 // RepeaterBook JSON error codes -> our typed categories.
 function mapErrorCode(code: string | undefined, status: number): SourceResult<never> {

@@ -14,10 +14,10 @@ own app-bound `rbuapp_` tokens; no shared `app_` token is embedded.
 ## Header fields
 
 - **Contact Name / Call Sign:** K1FRX
-- **Contact Email:** K1FRX-radio@gmail.com
+- **Contact Email:** k1frxradio@gmail.com
 - **Project / Application Name:** Point My Yagi
 - **Project website or review link:** https://github.com/K1FRX-radio/point-my-yagi (open source)
-- **Application User-Agent:** `PointMyYagi/1.0 (+https://github.com/K1FRX-radio/point-my-yagi; K1FRX-radio@gmail.com)`
+- **Application User-Agent:** `PointMyYagi/1.0 (+https://github.com/K1FRX-radio/point-my-yagi; k1frxradio@gmail.com)`
 - **Requested scopes:** `api.export` (North America) and `api.export_row` (rest of world); either alone is acceptable.
 
 ## Application review details
