@@ -1,18 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useReducer } from "react";
 
 import {
   containsTarget,
-  toggleFavorite,
-  toSavedTarget,
-  upsertRecent,
+  initialTargetListsState,
+  targetListsReducer,
   type SavedTarget,
   type Target,
 } from "@/domain";
 
 const FAVORITES_KEY = "pmy.favorites.v1";
 const RECENTS_KEY = "pmy.recents.v1";
-const RECENTS_CAP = 15;
 
 function parseSaved(raw: string | null): SavedTarget[] {
   if (!raw) {
@@ -34,41 +32,28 @@ export interface TargetLists {
   addRecent: (target: Target) => void;
 }
 
-const TargetListsContext = createContext<TargetLists>({
-  favorites: [],
-  recents: [],
-  isFavorite: () => false,
-  toggleFavorite: () => {},
-  addRecent: () => {},
-});
+const TargetListsContext = createContext<TargetLists | null>(null);
 
 /** Shared offline favorites and recent targets, persisted with AsyncStorage. */
 export function TargetListsProvider({ children }: { children: React.ReactNode }) {
-  const [favorites, setFavorites] = useState<SavedTarget[]>([]);
-  const [recents, setRecents] = useState<SavedTarget[]>([]);
-  const loaded = useRef(false);
-  // A user action can mutate state before hydration resolves; don't let the
-  // initial load clobber it.
-  const touched = useRef(false);
+  const [state, dispatch] = useReducer(targetListsReducer, initialTargetListsState);
+  const { favorites, recents, hydrated } = state;
 
   useEffect(() => {
     let active = true;
     const load = async () => {
+      let favRaw: string | null = null;
+      let recRaw: string | null = null;
       try {
-        const [favRaw, recRaw] = await Promise.all([
+        [favRaw, recRaw] = await Promise.all([
           AsyncStorage.getItem(FAVORITES_KEY),
           AsyncStorage.getItem(RECENTS_KEY),
         ]);
-        if (active && !touched.current) {
-          setFavorites(parseSaved(favRaw));
-          setRecents(parseSaved(recRaw));
-        }
       } catch {
-        // ignore: start empty
-      } finally {
-        if (active) {
-          loaded.current = true;
-        }
+        // ignore: hydrate with whatever we read (empty on failure)
+      }
+      if (active) {
+        dispatch({ type: "hydrate", favorites: parseSaved(favRaw), recents: parseSaved(recRaw) });
       }
     };
     void load();
@@ -78,27 +63,25 @@ export function TargetListsProvider({ children }: { children: React.ReactNode })
   }, []);
 
   useEffect(() => {
-    if (!loaded.current) {
+    if (!hydrated) {
       return;
     }
     AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites)).catch(() => {});
-  }, [favorites]);
+  }, [favorites, hydrated]);
 
   useEffect(() => {
-    if (!loaded.current) {
+    if (!hydrated) {
       return;
     }
     AsyncStorage.setItem(RECENTS_KEY, JSON.stringify(recents)).catch(() => {});
-  }, [recents]);
+  }, [recents, hydrated]);
 
   const toggle = useCallback((target: Target | SavedTarget) => {
-    touched.current = true;
-    setFavorites((prev) => toggleFavorite(prev, toSavedTarget(target)));
+    dispatch({ type: "toggleFavorite", target });
   }, []);
 
   const addRecent = useCallback((target: Target) => {
-    touched.current = true;
-    setRecents((prev) => upsertRecent(prev, toSavedTarget(target), RECENTS_CAP));
+    dispatch({ type: "addRecent", target });
   }, []);
 
   const isFavorite = useCallback((id: string) => containsTarget(favorites, id), [favorites]);
@@ -110,7 +93,11 @@ export function TargetListsProvider({ children }: { children: React.ReactNode })
   return <TargetListsContext value={value}>{children}</TargetListsContext>;
 }
 
-/** Consume the shared favorites/recents state. */
+/** Consume the shared favorites/recents state. Throws if used outside the provider. */
 export function useTargetLists(): TargetLists {
-  return use(TargetListsContext);
+  const value = use(TargetListsContext);
+  if (value === null) {
+    throw new Error("useTargetLists must be used within a TargetListsProvider");
+  }
+  return value;
 }

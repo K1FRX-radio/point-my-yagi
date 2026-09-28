@@ -22,6 +22,8 @@ export { isSavedRef, toSavedTarget } from "./saved-target";
 export type { SavedTarget, SavedTargetRef } from "./saved-target";
 export type { Target, TargetPrecision, TargetSourceType } from "./target";
 export { containsTarget, toggleFavorite, upsertRecent } from "./target-lists";
+export { initialTargetListsState, RECENTS_CAP, targetListsReducer } from "./target-lists-store";
+export type { TargetListsAction, TargetListsState } from "./target-lists-store";
 export { formatDistance } from "./units";
 export type { DistanceUnit } from "./units";
 export { utcDayKey, workedKey } from "./worked";
