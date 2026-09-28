@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -49,6 +49,17 @@ interface Row {
 }
 
 const EMPTY_TARGETS: Target[] = [];
+
+/** Current epoch ms, refreshed on an interval so relative ages stay live. */
+function useNow(intervalMs: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
 function formatDistance(meters: number): string {
   const km = meters / 1000;
   return km < 1
@@ -116,7 +127,9 @@ export function PotaScreen() {
     () => (state.status === "ready" ? state.targets : EMPTY_TARGETS),
     [state],
   );
-  const referenceMs = state.status === "ready" ? state.loadedAt : 0;
+  // Compare spot ages against a live clock, not the frozen load time, so ages
+  // and the stale threshold keep advancing while the screen stays open.
+  const nowMs = useNow(30_000);
 
   const bands = useMemo(() => distinctBands(targets), [targets]);
   const modes = useMemo(() => distinctModes(targets), [targets]);
@@ -249,8 +262,9 @@ export function PotaScreen() {
             keyExtractor={(row) => row.target.id}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.listContent}
+            extraData={nowMs}
             renderItem={({ item }) => {
-              const age = formatAge(item.target.observedAt, referenceMs);
+              const age = formatAge(item.target.observedAt, nowMs);
               const itemBand = bandForMhz(item.target.frequencyMhz);
               const canMark = Boolean(item.target.callsign && item.target.sourceRecordId);
               const marked =
