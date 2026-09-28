@@ -49,10 +49,20 @@ export function frequencyKhzToMhz(value: string | number | undefined | null): nu
     return undefined;
   }
   const asKhz = num / 1_000;
+  const asHz = num / 1_000_000;
+  // Prefer whichever interpretation lands inside a known amateur band, so an HF
+  // value logged in Hz (e.g. 14074000 -> 14.074 MHz) is not mistaken for a
+  // GHz-scale kHz reading that still slips under the broad plausibility ceiling.
+  if (bandForMhz(asKhz)) {
+    return asKhz;
+  }
+  if (bandForMhz(asHz)) {
+    return asHz;
+  }
+  // Fall back to plausibility for frequencies outside the coarse band table.
   if (inRange(asKhz)) {
     return asKhz;
   }
-  const asHz = num / 1_000_000;
   return inRange(asHz) ? asHz : undefined;
 }
 

@@ -23,6 +23,14 @@ describe("frequencyKhzToMhz", () => {
     expect(frequencyKhzToMhz("146520000")).toBeCloseTo(146.52, 3);
   });
 
+  it("uses the band-plausible interpretation for HF frequencies logged in Hz", () => {
+    // 14074000 as kHz would be 14074 MHz (implausible); as Hz it is 14.074 MHz
+    // (20m), which sits in a real band, so that reading wins.
+    expect(frequencyKhzToMhz("14074000")).toBeCloseTo(14.074, 6);
+    expect(frequencyKhzToMhz(21074000)).toBeCloseTo(21.074, 6);
+    expect(frequencyKhzToMhz("7074000")).toBeCloseTo(7.074, 6);
+  });
+
   it("drops values implausible in both kHz and Hz", () => {
     expect(frequencyKhzToMhz("50000000000")).toBeUndefined();
   });
