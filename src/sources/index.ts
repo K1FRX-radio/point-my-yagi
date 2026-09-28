@@ -18,13 +18,13 @@ export {
   type PotaSourceOptions,
 } from "./pota/pota-source";
 export { TargetSourceRegistry } from "./registry";
+export { normalizeCallsign } from "./repeaterbook/callsign";
 export {
   RepeaterBookClient,
   sharedRepeaterBookClient,
   type RepeaterBookClientOptions,
   type RepeaterBookLookup,
 } from "./repeaterbook/repeaterbook-client";
-export { normalizeCallsign } from "./repeaterbook/callsign";
 export {
   REPEATERBOOK_API_BASE,
   REPEATERBOOK_USER_AGENT,

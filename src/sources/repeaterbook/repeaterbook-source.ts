@@ -6,9 +6,9 @@ import { filterTargets } from "../filter-targets";
 import type { SearchRequest, TargetSource, TargetSourceInfo } from "../target-source";
 import { normalizeCallsign } from "./callsign";
 import {
-  RepeaterBookClient,
   REPEATERBOOK_API_BASE,
   REPEATERBOOK_USER_AGENT,
+  RepeaterBookClient,
   sharedRepeaterBookClient,
 } from "./repeaterbook-client";
 
