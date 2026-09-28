@@ -3,6 +3,7 @@ import {
   validateLongitude,
   type RepeaterBookDataset,
   type Target,
+  type TargetPrecision,
 } from "@/domain";
 
 import { asRecord, getOptionalString, getString, SchemaError } from "../schema";
@@ -51,7 +52,18 @@ export function mapRepeaterBookRecord(raw: unknown, dataset: RepeaterBookDataset
   const mode = getOptionalString(obj, "Mode", "repeater");
   const precise = getOptionalString(obj, "Precise", "repeater");
 
-  const precision = precise === "0" ? "approximate" : "exact";
+  // RepeaterBook specially flags exact coordinates with "1"; "0" is non-exact.
+  // Anything missing or unrecognized must not be presented as exact, so a Yagi
+  // is never aimed with more confidence than the source actually supports.
+  const precision: TargetPrecision =
+    precise === "1" ? "exact" : precise === "0" ? "approximate" : "unknown";
+
+  const locationWarning =
+    precision === "approximate"
+      ? "RepeaterBook marks this location as approximate."
+      : precision === "unknown"
+        ? "RepeaterBook did not flag this location as exact; treat it as approximate."
+        : undefined;
 
   return {
     id: `repeaterbook:${stateId}-${rptrId}`,
@@ -68,8 +80,7 @@ export function mapRepeaterBookRecord(raw: unknown, dataset: RepeaterBookDataset
     detailUrl: `${DETAIL_URL}?state_id=${encodeURIComponent(stateId)}&ID=${encodeURIComponent(rptrId)}`,
     repeaterBookDataset: dataset,
     precision,
-    locationWarning:
-      precision === "approximate" ? "RepeaterBook marks this location as approximate." : undefined,
+    locationWarning,
   };
 }
 

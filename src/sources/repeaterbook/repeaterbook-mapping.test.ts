@@ -33,6 +33,23 @@ describe("mapRepeaterBookRecord", () => {
     expect(target.mode).toBe("DMR");
   });
 
+  it("treats a missing Precise flag as unknown, never exact", () => {
+    const base = { ...records[0] } as Record<string, unknown>;
+    delete base.Precise;
+    const target = mapRepeaterBookRecord(base);
+    expect(target.precision).toBe("unknown");
+    expect(target.locationWarning).toMatch(/approximate/);
+  });
+
+  it("treats a blank or unrecognized Precise value as unknown, never exact", () => {
+    const blank = mapRepeaterBookRecord({ ...records[0], Precise: "" });
+    expect(blank.precision).toBe("unknown");
+
+    const weird = mapRepeaterBookRecord({ ...records[0], Precise: "yes" });
+    expect(weird.precision).toBe("unknown");
+    expect(weird.locationWarning).toMatch(/approximate/);
+  });
+
   it("throws for a record without coordinates", () => {
     expect(() => mapRepeaterBookRecord(records[2])).toThrow();
   });

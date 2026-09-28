@@ -152,8 +152,9 @@ directly to RepeaterBook.
 analytics or logging service. Retrieved records are held in session memory only
 (~60-second TTL) and then discarded; the only data written to the device is the
 user's own token in the secure enclave and, if the user opts to save a target, a
-minimal non-locating reference (callsign, name, record id, detail link) in the
-local store. No RepeaterBook coordinates or bulk data are written to disk.
+minimal non-locating reference (callsign, name, record id, detail link, dataset
+marker) in the local store. No RepeaterBook coordinates or bulk data are written
+to disk.
 
 **How unauthorized use and bulk scraping are prevented:** Requests are strictly
 user-initiated, one targeted callsign lookup per explicit tap, with no background
@@ -250,7 +251,8 @@ Wherever a RepeaterBook-derived repeater is shown or acted on, the app displays
   returned to the authoritative RepeaterBook listing for the exact repeater.
 
 Attribution is shown as visible on-screen text next to the data (not buried in an
-about box), and RepeaterBook links open in the system browser. The credit and link
+about box), and RepeaterBook links open in the device browser (an in-app browser
+tab on native). The credit and link
 are present on any surface that renders RepeaterBook data; no RepeaterBook data is
 shown anywhere without them.
 
