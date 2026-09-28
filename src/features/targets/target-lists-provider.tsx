@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   containsTarget,
@@ -34,11 +34,22 @@ export interface TargetLists {
   addRecent: (target: Target) => void;
 }
 
-/** Offline favorites and recent targets, persisted with AsyncStorage. */
-export function useTargetLists(): TargetLists {
+const TargetListsContext = createContext<TargetLists>({
+  favorites: [],
+  recents: [],
+  isFavorite: () => false,
+  toggleFavorite: () => {},
+  addRecent: () => {},
+});
+
+/** Shared offline favorites and recent targets, persisted with AsyncStorage. */
+export function TargetListsProvider({ children }: { children: React.ReactNode }) {
   const [favorites, setFavorites] = useState<SavedTarget[]>([]);
   const [recents, setRecents] = useState<SavedTarget[]>([]);
   const loaded = useRef(false);
+  // A user action can mutate state before hydration resolves; don't let the
+  // initial load clobber it.
+  const touched = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -48,7 +59,7 @@ export function useTargetLists(): TargetLists {
           AsyncStorage.getItem(FAVORITES_KEY),
           AsyncStorage.getItem(RECENTS_KEY),
         ]);
-        if (active) {
+        if (active && !touched.current) {
           setFavorites(parseSaved(favRaw));
           setRecents(parseSaved(recRaw));
         }
@@ -81,14 +92,25 @@ export function useTargetLists(): TargetLists {
   }, [recents]);
 
   const toggle = useCallback((target: Target | SavedTarget) => {
+    touched.current = true;
     setFavorites((prev) => toggleFavorite(prev, toSavedTarget(target)));
   }, []);
 
   const addRecent = useCallback((target: Target) => {
+    touched.current = true;
     setRecents((prev) => upsertRecent(prev, toSavedTarget(target), RECENTS_CAP));
   }, []);
 
   const isFavorite = useCallback((id: string) => containsTarget(favorites, id), [favorites]);
 
-  return { favorites, recents, isFavorite, toggleFavorite: toggle, addRecent };
+  const value = useMemo(
+    () => ({ favorites, recents, isFavorite, toggleFavorite: toggle, addRecent }),
+    [favorites, recents, isFavorite, toggle, addRecent],
+  );
+  return <TargetListsContext value={value}>{children}</TargetListsContext>;
+}
+
+/** Consume the shared favorites/recents state. */
+export function useTargetLists(): TargetLists {
+  return use(TargetListsContext);
 }

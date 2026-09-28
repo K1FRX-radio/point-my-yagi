@@ -21,8 +21,8 @@ import { useForegroundLocation } from "@/features/location/use-foreground-locati
 import { PointerArrow } from "@/features/pointing/pointer-arrow";
 import { useHeading } from "@/features/pointing/use-heading";
 import { usePreferences } from "@/features/preferences/preferences-provider";
+import { useTargetLists } from "@/features/targets/target-lists-provider";
 import { decodeTargetParam } from "@/features/targets/target-params";
-import { useTargetLists } from "@/features/targets/use-target-lists";
 import { useTheme } from "@/hooks/use-theme";
 
 const ALIGNED_COLOR = "#12A150";

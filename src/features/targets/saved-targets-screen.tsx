@@ -8,8 +8,8 @@ import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import type { SavedTarget } from "@/domain";
 import { resolveSavedTarget } from "@/features/targets/resolve-saved-target";
+import { useTargetLists } from "@/features/targets/target-lists-provider";
 import { pointingHref } from "@/features/targets/target-params";
-import { useTargetLists } from "@/features/targets/use-target-lists";
 import { useTheme } from "@/hooks/use-theme";
 
 export function SavedTargetsScreen() {
