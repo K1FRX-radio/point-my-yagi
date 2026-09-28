@@ -50,14 +50,14 @@ The scopes I'm requesting are: `api.export` and `api.export_row` (either alone w
 ## API workflow and data fields
 
 **User action that triggers a request:** A request is made only when the operator
-explicitly taps "Look up" after typing a specific repeater's callsign (optionally
-refined by frequency) into the target screen. There is no automatic, background,
-on-scroll, or location-polled querying; one deliberate user action produces one
-lookup.
+explicitly taps "Look up" after typing a specific repeater's callsign into the
+target screen. There is no automatic, background, on-scroll, or location-polled
+querying; one deliberate user action produces one lookup.
 
 **Exact search / region limits:** Queries are limited to a single targeted lookup
-keyed on `callsign` (with optional `frequency`), never open-ended or
-wildcard-harvesting queries. The client normalizes the callsign at the source
+keyed on one `callsign` (callsign-only; `frequency` is not sent as a query
+parameter), never open-ended or wildcard-harvesting queries. The client
+normalizes the callsign at the source
 boundary and rejects empty input and the RepeaterBook `%` wildcard before any
 network call, so a lookup cannot be turned into a broad query. North American
 lookups use `api/export.php` (scope `api.export`); rest-of-world lookups use
@@ -166,9 +166,10 @@ cannot be turned into a scraping or re-serving tool.
 
 ## Rate and abuse controls
 
-**Concurrency:** At most 1 in-flight request at a time. Lookups are serialized; a
-new lookup cannot start until the previous one resolves or is cancelled. No
-parallel fan-out across regions or endpoints.
+**Concurrency:** At most 1 in-flight request at a time. A second lookup requested
+while one is in flight is rejected rather than queued, so a new lookup cannot
+start until the previous one resolves. No parallel fan-out across regions or
+endpoints.
 
 **Request rate:** User-initiated only. A debounce enforces a minimum 1 second
 between lookups (rapid repeated taps are ignored), and the client self-limits to a
@@ -180,10 +181,10 @@ through result sets and no "next page" traversal. Handling is capped at 25 recor
 returned for one callsign purely for disambiguation; the app never walks or
 accumulates larger sets.
 
-**Duplicate suppression:** An identical lookup (same callsign/frequency) repeated
-within the 60-second in-memory TTL is served from the cached result instead of
-issuing a new request. Combined with the 1-second debounce, this prevents
-redundant calls from repeated taps or re-entering the same target.
+**Duplicate suppression:** An identical lookup (same callsign and dataset)
+repeated within the 60-second in-memory TTL is served from the cached result
+instead of issuing a new request. Combined with the 1-second debounce, this
+prevents redundant calls from repeated taps or re-entering the same target.
 
 **429 / backoff behavior:** On an HTTP 429, the app stops immediately and does not
 retry the current action. Subsequent user-initiated lookups apply exponential
@@ -209,11 +210,13 @@ reference lives in the app's local key-value store on that single device. The
 user's `rbuapp_` token lives in the device secure enclave. There is no backend, so
 nothing is stored server-side or shared.
 
-**For how long:** Session results expire after ~60 seconds and clear on leaving
-the aiming screen or closing the app. Recents are capped at 15 entries (oldest
-dropped). Favorites persist until the user deletes them. The daily "worked"
-convenience list stores only opaque `callsign:recordId` keys for the current UTC
-day and is discarded the next day; it holds no coordinates.
+**For how long:** Session results expire ~60 seconds after they are fetched (each
+entry is actively evicted at its TTL) and are otherwise cleared when the app
+process ends. The in-memory cache is shared across screens by design, so it is
+not tied to any single aiming-screen visit. Recents are capped at 15 entries
+(oldest dropped). Favorites persist until the user deletes them. The daily
+"worked" convenience list stores only opaque `callsign:recordId` keys for the
+current UTC day and is discarded the next day; it holds no coordinates.
 
 **Who can read them:** Only the current app process on that single device, for
 that single user. No other app, user, server, or the developer can read them;
@@ -221,7 +224,7 @@ nothing is networked or shared.
 
 **How they are refreshed or deleted:** Live data is refreshed only by an explicit
 user-initiated lookup (or by re-selecting a saved reference, which triggers a
-fresh RepeaterBook fetch). Session results delete on TTL expiry and screen exit.
+fresh RepeaterBook fetch). Session results are actively evicted at TTL expiry.
 Recents self-evict past the 15-item cap; favorites are deleted by the user; the
 worked list auto-deletes on UTC day rollover.
 

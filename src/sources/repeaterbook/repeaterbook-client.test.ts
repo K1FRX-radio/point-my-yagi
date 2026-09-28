@@ -27,13 +27,28 @@ function scriptFetch(responses: ScriptEntry[] = [{}]) {
   });
 }
 
-function makeClient(fetchImpl: FetchLike, now: () => number) {
+function makeClient(
+  fetchImpl: FetchLike,
+  now: () => number,
+  schedule?: (cb: () => void, ms: number) => void,
+) {
   return new RepeaterBookClient({
     fetch: fetchImpl,
     now,
+    schedule: schedule ?? (() => {}),
     userAgent: "PointMyYagi/test",
     baseUrl: "https://rb.test/api",
   });
+}
+
+function captureScheduler() {
+  const tasks: { cb: () => void; ms: number }[] = [];
+  return {
+    schedule: (cb: () => void, ms: number) => {
+      tasks.push({ cb, ms });
+    },
+    tasks,
+  };
 }
 
 const na = (callsign: string): RepeaterBookLookup => ({
@@ -113,6 +128,42 @@ describe("RepeaterBookClient cache", () => {
     clock.advance(1_000);
     await client.lookup(row("W6ABC"));
 
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("evicts a cached entry when its scheduled TTL fires (removed from the Map)", async () => {
+    const clock = makeClock();
+    const fetchImpl = scriptFetch();
+    const scheduler = captureScheduler();
+    const client = makeClient(fetchImpl, clock.now, scheduler.schedule);
+
+    await client.lookup(na("W6ABC"));
+    expect(scheduler.tasks[0]?.ms).toBe(60_000);
+
+    // Fire the eviction while still inside the TTL window; the entry is gone, so
+    // the next lookup refetches instead of serving a stale cache hit.
+    scheduler.tasks[0]?.cb();
+    clock.advance(2_000);
+    await client.lookup(na("W6ABC"));
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not evict a newer refetch when a stale eviction timer fires", async () => {
+    const clock = makeClock();
+    const fetchImpl = scriptFetch();
+    const scheduler = captureScheduler();
+    const client = makeClient(fetchImpl, clock.now, scheduler.schedule);
+
+    await client.lookup(na("W6ABC")); // cached, eviction task[0]
+    clock.advance(60_001);
+    await client.lookup(na("W6ABC")); // TTL expired -> refetch, eviction task[1]
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+
+    // The stale timer must not delete the newer entry.
+    scheduler.tasks[0]?.cb();
+    clock.advance(2_000);
+    await client.lookup(na("W6ABC"));
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });

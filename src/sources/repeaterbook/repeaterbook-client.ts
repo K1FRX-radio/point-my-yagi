@@ -63,6 +63,8 @@ export interface RepeaterBookClientOptions {
   fetch?: FetchLike;
   /** Injectable clock (epoch ms). Defaults to Date.now. */
   now?: () => number;
+  /** Injectable timer used to evict cache entries at TTL. Defaults to setTimeout. */
+  schedule?: (callback: () => void, ms: number) => void;
   userAgent?: string;
   baseUrl?: string;
 }
@@ -81,6 +83,7 @@ interface CacheEntry {
 export class RepeaterBookClient {
   private readonly fetchImpl: FetchLike;
   private readonly now: () => number;
+  private readonly schedule: (callback: () => void, ms: number) => void;
   private readonly userAgent: string;
   private readonly baseUrl: string;
 
@@ -94,6 +97,7 @@ export class RepeaterBookClient {
   constructor(options: RepeaterBookClientOptions = {}) {
     this.fetchImpl = options.fetch ?? (globalThis.fetch as unknown as FetchLike);
     this.now = options.now ?? Date.now;
+    this.schedule = options.schedule ?? ((callback, ms) => void setTimeout(callback, ms));
     this.userAgent = options.userAgent ?? REPEATERBOOK_USER_AGENT;
     this.baseUrl = options.baseUrl ?? REPEATERBOOK_API_BASE;
   }
@@ -103,6 +107,8 @@ export class RepeaterBookClient {
     // The dataset is part of the key so NA and ROW results never collide.
     const key = `${req.dataset}:${req.callsign}`;
 
+    // Actively discard anything past its TTL so stale records never accumulate.
+    this.pruneExpired(now);
     const cached = this.cache.get(key);
     if (cached && cached.expiresAt > now) {
       return { ok: true, value: cached.value };
@@ -139,7 +145,9 @@ export class RepeaterBookClient {
     try {
       const result = await this.performFetch(req);
       if (result.ok) {
-        this.cache.set(key, { value: result.value, expiresAt: this.now() + CACHE_TTL_MS });
+        const expiresAt = this.now() + CACHE_TTL_MS;
+        this.cache.set(key, { value: result.value, expiresAt });
+        this.scheduleEviction(key, expiresAt);
         // Successful traffic resets the backoff sequence.
         this.backoffStepSec = BACKOFF_START_SEC;
         this.backoffUntil = 0;
@@ -156,6 +164,23 @@ export class RepeaterBookClient {
 
   private pruneWindow(now: number): void {
     this.windowStarts = this.windowStarts.filter((t) => now - t < RATE_WINDOW_MS);
+  }
+
+  private pruneExpired(now: number): void {
+    for (const [key, entry] of this.cache) {
+      if (entry.expiresAt <= now) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  private scheduleEviction(key: string, expiresAt: number): void {
+    this.schedule(() => {
+      // Only evict if this exact entry is still current (not a newer refetch).
+      if (this.cache.get(key)?.expiresAt === expiresAt) {
+        this.cache.delete(key);
+      }
+    }, CACHE_TTL_MS);
   }
 
   private async performFetch(req: RepeaterBookLookup): Promise<SourceResult<readonly Target[]>> {

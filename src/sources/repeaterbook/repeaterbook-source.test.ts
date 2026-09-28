@@ -29,6 +29,7 @@ function makeClient(fetchImpl: FetchLike) {
   return new RepeaterBookClient({
     fetch: fetchImpl,
     now: () => Date.now(),
+    schedule: () => {},
     userAgent: "PointMyYagi/test",
     baseUrl: "https://rb.test/api",
   });
