@@ -27,7 +27,10 @@ export async function resolveSavedTarget(saved: SavedTarget): Promise<SourceResu
   }
 
   const token = await getRepeaterBookToken();
-  const source = new RepeaterBookTargetSource({ token: token ?? undefined });
+  const source = new RepeaterBookTargetSource({
+    token: token ?? undefined,
+    dataset: saved.repeaterBookDataset ?? "na",
+  });
   const result = await source.search({ text: saved.callsign });
   if (!result.ok) {
     return result;

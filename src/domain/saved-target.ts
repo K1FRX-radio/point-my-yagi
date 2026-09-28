@@ -1,4 +1,4 @@
-import type { Target, TargetSourceType } from "./target";
+import type { RepeaterBookDataset, Target, TargetSourceType } from "./target";
 
 /**
  * At-rest form of a saved target that intentionally omits location data. Used for
@@ -14,6 +14,8 @@ export interface SavedTargetRef {
   callsign?: string;
   sourceRecordId?: string;
   detailUrl?: string;
+  /** For RepeaterBook refs: which export dataset (NA/ROW) to re-query on reopen. */
+  repeaterBookDataset?: RepeaterBookDataset;
 }
 
 /** A saved list entry: a full target (manual/POTA) or a non-locating reference. */
@@ -43,6 +45,7 @@ export function toSavedTarget(value: Target | SavedTarget): SavedTarget {
       callsign: value.callsign,
       sourceRecordId: value.sourceRecordId,
       detailUrl: value.detailUrl,
+      repeaterBookDataset: value.repeaterBookDataset,
     };
   }
   return value;

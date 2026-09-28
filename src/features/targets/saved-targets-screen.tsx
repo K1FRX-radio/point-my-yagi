@@ -1,8 +1,9 @@
-import { useRouter } from "expo-router";
+import { type Href, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ExternalLink } from "@/components/external-link";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
@@ -127,6 +128,11 @@ function TargetRow({
         <ThemedText type="small" themeColor="textSecondary">
           {target.sourceLabel}
         </ThemedText>
+        {target.sourceType === "repeaterbook" && target.detailUrl ? (
+          <ExternalLink href={target.detailUrl as Href & string}>
+            <ThemedText type="linkPrimary">Data courtesy of RepeaterBook.com</ThemedText>
+          </ExternalLink>
+        ) : null}
       </View>
       {busy ? (
         <ActivityIndicator color={theme.text} />

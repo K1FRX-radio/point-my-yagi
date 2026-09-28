@@ -1,10 +1,11 @@
 import * as Haptics from "expo-haptics";
 import { useKeepAwake } from "expo-keep-awake";
-import { useLocalSearchParams } from "expo-router";
+import { type Href, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ExternalLink } from "@/components/external-link";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
@@ -195,6 +196,18 @@ export function PointingScreen() {
             <ThemedText type="smallBold" themeColor="textSecondary">
               Source: {target.sourceLabel}
             </ThemedText>
+            {pointedTarget?.sourceType === "repeaterbook" ? (
+              <View style={styles.attribution}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Data courtesy of RepeaterBook.com
+                </ThemedText>
+                {pointedTarget.detailUrl ? (
+                  <ExternalLink href={pointedTarget.detailUrl as Href & string}>
+                    <ThemedText type="linkPrimary">View on RepeaterBook</ThemedText>
+                  </ExternalLink>
+                ) : null}
+              </View>
+            ) : null}
           </View>
 
           {turn ? (
@@ -342,6 +355,7 @@ const styles = StyleSheet.create({
   headerBlock: { gap: Spacing.one, alignSelf: "stretch" },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   headerName: { flex: 1 },
+  attribution: { flexDirection: "row", alignItems: "center", gap: Spacing.two, flexWrap: "wrap" },
   star: { fontSize: 28, lineHeight: 32 },
   turnText: { fontSize: 32, fontWeight: "800" },
   fallbackBlock: { alignItems: "center", gap: Spacing.one },

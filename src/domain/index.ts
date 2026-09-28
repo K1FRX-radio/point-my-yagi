@@ -20,7 +20,7 @@ export type { ManualCoordinateInput, ManualGridInput, ManualTargetInput } from "
 export { bandForMhz, frequencyKhzToMhz } from "./radio";
 export { isSavedRef, toSavedTarget } from "./saved-target";
 export type { SavedTarget, SavedTargetRef } from "./saved-target";
-export type { Target, TargetPrecision, TargetSourceType } from "./target";
+export type { Target, TargetPrecision, TargetSourceType, RepeaterBookDataset } from "./target";
 export { containsTarget, toggleFavorite, upsertRecent } from "./target-lists";
 export { initialTargetListsState, RECENTS_CAP, targetListsReducer } from "./target-lists-store";
 export type { TargetListsAction, TargetListsState } from "./target-lists-store";

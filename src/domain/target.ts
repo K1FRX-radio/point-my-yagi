@@ -1,6 +1,9 @@
 /** Where a target came from. */
 export type TargetSourceType = "manual" | "pota" | "repeaterbook" | "qrz";
 
+/** Which RepeaterBook export dataset served a record: North America vs rest-of-world. */
+export type RepeaterBookDataset = "na" | "row";
+
 /**
  * How trustworthy a target's coordinates are. Drives the uncertainty indicator
  * so the UI never presents a bearing as more precise than the source supports.
@@ -34,6 +37,8 @@ export interface Target {
   adminRegion?: string;
   /** Link to the source record, for attribution/details. */
   detailUrl?: string;
+  /** For RepeaterBook targets: which export dataset (NA/ROW) served this record. */
+  repeaterBookDataset?: RepeaterBookDataset;
   precision: TargetPrecision;
   /** Estimated radius of positional uncertainty in meters, when known. */
   uncertaintyRadiusMeters?: number;

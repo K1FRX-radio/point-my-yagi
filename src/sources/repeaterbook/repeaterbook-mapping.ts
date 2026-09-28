@@ -1,4 +1,9 @@
-import { validateLatitude, validateLongitude, type Target } from "@/domain";
+import {
+  validateLatitude,
+  validateLongitude,
+  type RepeaterBookDataset,
+  type Target,
+} from "@/domain";
 
 import { asRecord, getOptionalString, getString, SchemaError } from "../schema";
 
@@ -18,9 +23,11 @@ function parseNumber(value: string | undefined): number | undefined {
  * coordinates or ids so the caller can skip that record.
  *
  * NOTE: the response field names must be re-verified against the live Export API
- * once access is approved; this maps the documented/historical shape.
+ * once access is approved; this maps the documented/historical shape. The
+ * rest-of-world (exportROW.php) response shape in particular has NOT been
+ * observed against approved access and must be verified before enabling ROW.
  */
-export function mapRepeaterBookRecord(raw: unknown): Target {
+export function mapRepeaterBookRecord(raw: unknown, dataset: RepeaterBookDataset = "na"): Target {
   const obj = asRecord(raw, "repeater");
   const stateId = getString(obj, "State ID", "repeater");
   const rptrId = getString(obj, "Rptr ID", "repeater");
@@ -59,6 +66,7 @@ export function mapRepeaterBookRecord(raw: unknown): Target {
     adminRegion: [state, country].filter(Boolean).join(", ") || undefined,
     sourceRecordId: `${stateId}-${rptrId}`,
     detailUrl: `${DETAIL_URL}?state_id=${encodeURIComponent(stateId)}&ID=${encodeURIComponent(rptrId)}`,
+    repeaterBookDataset: dataset,
     precision,
     locationWarning:
       precision === "approximate" ? "RepeaterBook marks this location as approximate." : undefined,
@@ -66,11 +74,14 @@ export function mapRepeaterBookRecord(raw: unknown): Target {
 }
 
 /** Map many records, skipping malformed ones. */
-export function mapRepeaterBookRecords(rawRecords: unknown[]): Target[] {
+export function mapRepeaterBookRecords(
+  rawRecords: unknown[],
+  dataset: RepeaterBookDataset = "na",
+): Target[] {
   const targets: Target[] = [];
   for (const raw of rawRecords) {
     try {
-      targets.push(mapRepeaterBookRecord(raw));
+      targets.push(mapRepeaterBookRecord(raw, dataset));
     } catch (error) {
       if (error instanceof SchemaError) {
         continue;

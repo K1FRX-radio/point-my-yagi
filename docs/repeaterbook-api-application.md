@@ -57,11 +57,15 @@ lookup.
 
 **Exact search / region limits:** Queries are limited to a single targeted lookup
 keyed on `callsign` (with optional `frequency`), never open-ended or
-wildcard-harvesting queries. North American lookups use `api/export.php` (scope
-`api.export`); rest-of-world lookups use `api/exportROW.php` (scope
-`api.export_row`). Region is bounded to the user's own area of operation for the
-repeater they name; the app does not sweep states, countries, or regions to build
-a list.
+wildcard-harvesting queries. The client normalizes the callsign at the source
+boundary and rejects empty input and the RepeaterBook `%` wildcard before any
+network call, so a lookup cannot be turned into a broad query. North American
+lookups use `api/export.php` (scope `api.export`); rest-of-world lookups use
+`api/exportROW.php` (scope `api.export_row`). The dataset (North America vs
+rest-of-world) is selected explicitly by the operator/region, never inferred from
+the callsign, and the app never queries both endpoints for a single lookup.
+Region is bounded to the user's own area of operation for the repeater they name;
+the app does not sweep states, countries, or regions to build a list.
 
 **Fields needed:** Only the minimum required to identify and aim at one repeater:
 state/repeater id (record key), callsign, latitude, longitude, nearest
@@ -80,7 +84,8 @@ antenna. Callsign, frequency, and mode are shown as confirmation labels. The liv
 record is held in session memory only (~60-second TTL) and then discarded. If the
 user saves the target to their on-device favorites/recents, only a minimal
 non-locating reference is stored (callsign, display name, RepeaterBook record id,
-and detail-page link), never coordinates, frequency, or mode; those are
+detail-page link, and a small dataset marker recording which export endpoint
+(NA/ROW) to re-query), never coordinates, frequency, or mode; those are
 re-fetched live from RepeaterBook on re-selection. Nothing is exported,
 redistributed, re-served, or accumulated into an offline dataset.
 
@@ -105,16 +110,17 @@ It does not recreate any RepeaterBook feature:
   favorites/recents shortlist on their device, containing solely the repeaters
   that individual user already selected to aim at. It is single-user, never shared
   or published, holds only a minimal non-locating reference for RepeaterBook
-  entries (callsign, name, record id, detail link, no coordinates at rest), and
-  cannot be used to search or browse RepeaterBook's data. Each entry links back to
+  entries (callsign, name, record id, detail link, and a dataset marker; no
+  coordinates at rest), and cannot be used to search or browse RepeaterBook's data. Each entry links back to
   its RepeaterBook detail page. It functions as personal recall, not a directory
   or a substitute for RepeaterBook's listings.
 - **Database:** No RepeaterBook dataset is stored, bundled offline, or
   accumulated. Live results live in session memory only (~60-second TTL) and are
   discarded. The optional favorites/recents list persists only a minimal
   non-locating reference for RepeaterBook targets (callsign, name, record id,
-  detail link); coordinates are never stored at rest and are re-fetched live from
-  RepeaterBook when needed, so the app cannot become a local repeater database.
+  detail link, dataset marker); coordinates are never stored at rest and are
+  re-fetched live from RepeaterBook when needed, so the app cannot become a local
+  repeater database.
 - **Export service:** No export, feed, sync, mirror, redistribution, or secondary
   API. Data never leaves the device except the user's own token in the request
   header to RepeaterBook.
@@ -192,8 +198,9 @@ correcting the cause.
 session memory (~60-second TTL) and are not written to disk. The app has an
 optional on-device favorites/recents list, but for RepeaterBook targets it stores
 only a minimal non-locating reference (callsign, display name, the RepeaterBook
-record id, and the RepeaterBook detail-page link). It does not store RepeaterBook
-coordinates, frequency, or mode at rest. Full details, including coordinates, are
+record id, the RepeaterBook detail-page link, and a dataset marker for NA/ROW
+re-query). It does not store RepeaterBook coordinates, frequency, or mode at
+rest. Full details, including coordinates, are
 re-fetched live from RepeaterBook (using the user's own token) when the user
 re-selects that entry, so no RepeaterBook dataset accumulates on the device.
 
