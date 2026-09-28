@@ -1,32 +1,15 @@
 import type { Href } from "expo-router";
 
-import type { Target } from "@/domain";
+import { decodeTarget, encodeTarget, type Target } from "@/domain";
 
 /** Encode a target for navigation params. */
 export function encodeTargetParam(target: Target): string {
-  return JSON.stringify(target);
+  return encodeTarget(target);
 }
 
-/** Decode a target navigation param, or null if missing/invalid. */
+/** Decode a target navigation param, or null if missing/invalid. Untrusted input. */
 export function decodeTargetParam(raw: string | undefined): Target | null {
-  if (!raw) {
-    return null;
-  }
-  try {
-    const value = JSON.parse(raw) as Partial<Target>;
-    if (
-      value &&
-      typeof value.latitude === "number" &&
-      typeof value.longitude === "number" &&
-      typeof value.name === "string" &&
-      typeof value.id === "string"
-    ) {
-      return value as Target;
-    }
-  } catch {
-    // fall through
-  }
-  return null;
+  return decodeTarget(raw);
 }
 
 /** Build the pointing route for a target. */
