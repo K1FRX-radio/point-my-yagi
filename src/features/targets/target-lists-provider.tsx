@@ -42,18 +42,17 @@ export function TargetListsProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     let active = true;
     const load = async () => {
-      let favRaw: string | null = null;
-      let recRaw: string | null = null;
       try {
-        [favRaw, recRaw] = await Promise.all([
+        const [favRaw, recRaw] = await Promise.all([
           AsyncStorage.getItem(FAVORITES_KEY),
           AsyncStorage.getItem(RECENTS_KEY),
         ]);
+        if (active) {
+          dispatch({ type: "hydrate", favorites: parseSaved(favRaw), recents: parseSaved(recRaw) });
+        }
       } catch {
-        // ignore: hydrate with whatever we read (empty on failure)
-      }
-      if (active) {
-        dispatch({ type: "hydrate", favorites: parseSaved(favRaw), recents: parseSaved(recRaw) });
+        // Leave hydrated=false so the persist effects never write empty state
+        // over potentially valid stored data.
       }
     };
     void load();
